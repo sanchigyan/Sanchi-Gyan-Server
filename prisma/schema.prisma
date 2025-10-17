@@ -1,0 +1,235 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Users table
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  firstName         String    @map("first_name")
+  lastName          String    @map("last_name")
+  role              Role      @default(STUDENT)
+  profileImageUrl   String?   @map("profile_image_url")
+  isEmailVerified   Boolean   @default(false) @map("is_email_verified")
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  courses           Course[]
+  enrollments       Enrollment[]
+  payments          Payment[]
+  reviews           Review[]
+  videoProgress     VideoProgress[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+// Password Reset Tokens
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// Courses
+model Course {
+  id              String    @id @default(uuid())
+  title           String
+  slug            String    @unique
+  description     String?   @db.Text
+  thumbnailUrl    String?   @map("thumbnail_url")
+  teacherId       String    @map("teacher_id")
+  category        String?
+  level           Level?
+  durationHours   Float?    @map("duration_hours")
+  price           Float     @default(0)
+  discountPrice   Float?    @map("discount_price")
+  isPublished     Boolean   @default(false) @map("is_published")
+  enrollmentCount Int       @default(0) @map("enrollment_count")
+  rating          Float     @default(0)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  teacher     User            @relation(fields: [teacherId], references: [id])
+  sections    CourseSection[]
+  enrollments Enrollment[]
+  payments    Payment[]
+  reviews     Review[]
+  notes       CourseNote[]
+
+  @@index([teacherId])
+  @@index([slug])
+  @@index([isPublished])
+  @@map("courses")
+}
+
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+// Course Sections
+model CourseSection {
+  id          String   @id @default(uuid())
+  courseId    String   @map("course_id")
+  title       String
+  description String?  @db.Text
+  orderIndex  Int      @map("order_index")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  course Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  videos Video[]
+  notes  CourseNote[]
+
+  @@index([courseId])
+  @@map("course_sections")
+}
+
+// Videos
+model Video {
+  id               String   @id @default(uuid())
+  sectionId        String   @map("section_id")
+  title            String
+  description      String?  @db.Text
+  videoUrl         String   @map("video_url")
+  thumbnailUrl     String?  @map("thumbnail_url")
+  durationSeconds  Int?     @map("duration_seconds")
+  orderIndex       Int      @map("order_index")
+  isPreview        Boolean  @default(false) @map("is_preview")
+  processingStatus String   @default("pending") @map("processing_status")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  section       CourseSection   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  videoProgress VideoProgress[]
+
+  @@index([sectionId])
+  @@map("videos")
+}
+
+// Course Notes
+model CourseNote {
+  id         String   @id @default(uuid())
+  courseId   String   @map("course_id")
+  sectionId  String?  @map("section_id")
+  title      String
+  content    String   @db.Text
+  fileUrl    String?  @map("file_url")
+  orderIndex Int?     @map("order_index")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  course  Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  section CourseSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  @@index([courseId])
+  @@map("course_notes")
+}
+
+// Enrollments
+model Enrollment {
+  id                 String    @id @default(uuid())
+  userId             String    @map("user_id")
+  courseId           String    @map("course_id")
+  enrolledAt         DateTime  @default(now()) @map("enrolled_at")
+  completedAt        DateTime? @map("completed_at")
+  progressPercentage Float     @default(0) @map("progress_percentage")
+  lastAccessedAt     DateTime? @map("last_accessed_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@map("enrollments")
+}
+
+// Video Progress
+model VideoProgress {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  videoId        String   @map("video_id")
+  watchedSeconds Int      @default(0) @map("watched_seconds")
+  completed      Boolean  @default(false)
+  lastWatchedAt  DateTime @default(now()) @map("last_watched_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@index([userId])
+  @@map("video_progress")
+}
+
+// Payments
+model Payment {
+  id                     String    @id @default(uuid())
+  userId                 String    @map("user_id")
+  courseId               String    @map("course_id")
+  amount                 Float
+  currency               String    @default("USD")
+  paymentMethod          String?   @map("payment_method")
+  stripePaymentIntentId  String?   @unique @map("stripe_payment_intent_id")
+  status                 PaymentStatus
+  paidAt                 DateTime? @map("paid_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@index([userId])
+  @@index([stripePaymentIntentId])
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Reviews
+model Review {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  courseId  String   @map("course_id")
+  rating    Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+  @@map("reviews")
+}
