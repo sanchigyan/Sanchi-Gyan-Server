@@ -12,8 +12,7 @@ model User {
   id                String    @id @default(uuid())
   email             String    @unique
   passwordHash      String    @map("password_hash")
-  firstName         String    @map("first_name")
-  lastName          String    @map("last_name")
+  fullname         String    @map("full_name")
   role              Role      @default(STUDENT)
   profileImageUrl   String?   @map("profile_image_url")
   isEmailVerified   Boolean   @default(false) @map("is_email_verified")

@@ -1,6 +1,6 @@
 import prisma from '../../config/database';
 import { hashPassword, comparePassword } from '../../utils/password.util';
-import { generateAccessToken, generateRefreshToken } from '../../utils/jwt.util';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../../utils/jwt.util';
 import { AppError } from '../../middleware/error.middleware';
 import crypto from 'crypto';
 
@@ -161,5 +161,56 @@ export class AuthService {
     });
 
     return { message: 'Password reset successful' };
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const { userId } = verifyRefreshToken(refreshToken);
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user || !user.isActive) {
+        throw new AppError('Invalid refresh token', 401);
+      }
+
+      // Generate new access token
+      const newAccessToken = generateAccessToken({
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+      });
+
+      // Optionally generate a new refresh token (token rotation)
+      const newRefreshToken = generateRefreshToken(user.id);
+
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,  // Send new one if rotating
+      };
+    } catch (error) {
+      throw new AppError('Invalid refresh token', 401);
+    }
+  }
+
+  async getCurrentUser(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        profileImageUrl: true,  // If you have this field
+        isEmailVerified: true,  // If you have this field
+      },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    return user;
   }
 }
