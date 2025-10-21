@@ -7,18 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Users table
+// Users table (UPDATED: role is now optional, no default)
 model User {
   id                String    @id @default(uuid())
   email             String    @unique
   passwordHash      String    @map("password_hash")
   fullname         String    @map("full_name")
-  role              Role      @default(STUDENT)
+  role              Role?     // UPDATED: Nullable, no default
   profileImageUrl   String?   @map("profile_image_url")
   isEmailVerified   Boolean   @default(false) @map("is_email_verified")
   isActive          Boolean   @default(true) @map("is_active")
   
-   // Onboarding fields (NEW)
+  // Onboarding fields
   onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
   purpose             String?  // 'learn' or 'find_opportunity'
   userType            String?  @map("user_type") // 'student', 'learner', 'teacher', 'other_profession'
@@ -35,6 +35,7 @@ model User {
   reviews           Review[]
   videoProgress     VideoProgress[]
   passwordResetTokens PasswordResetToken[]
+  subscription      Subscription? // NEW relation
 
   @@index([email])
   @@index([role])
@@ -195,34 +196,6 @@ model VideoProgress {
   @@map("video_progress")
 }
 
-// Payments
-model Payment {
-  id                     String    @id @default(uuid())
-  userId                 String    @map("user_id")
-  courseId               String    @map("course_id")
-  amount                 Float
-  currency               String    @default("USD")
-  paymentMethod          String?   @map("payment_method")
-  stripePaymentIntentId  String?   @unique @map("stripe_payment_intent_id")
-  status                 PaymentStatus
-  paidAt                 DateTime? @map("paid_at")
-  createdAt              DateTime  @default(now()) @map("created_at")
-
-  user   User   @relation(fields: [userId], references: [id])
-  course Course @relation(fields: [courseId], references: [id])
-
-  @@index([userId])
-  @@index([stripePaymentIntentId])
-  @@map("payments")
-}
-
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-}
-
 // Reviews
 model Review {
   id        String   @id @default(uuid())
@@ -239,4 +212,103 @@ model Review {
   @@unique([userId, courseId])
   @@index([courseId])
   @@map("reviews")
+}
+
+// NEW: Plan model (optional; can be hardcoded in code if you don't need admin-editable plans)
+model Plan {
+  id           String       @id @default(uuid())
+  name         String       @unique // e.g., 'Free Trial', 'Basic', 'Premium', 'Pro'
+  description  String?
+  monthlyPrice Float        @map("monthly_price")
+  annualPrice  Float        @map("annual_price")
+  features     String[]     // Array of feature strings
+  limitations  String[]     // Array of limitation strings
+  isTrial      Boolean      @default(false)
+  trialDays    Int?         // e.g., 7 for free trial
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+// NEW: Subscription model
+model Subscription {
+  id             String            @id @default(uuid())
+  userId         String            @unique @map("user_id") // One subscription per user
+  planId         String            @map("plan_id")
+  billingPeriod  BillingPeriod     @map("billing_period")
+  startDate      DateTime          @default(now()) @map("start_date")
+  endDate        DateTime?         @map("end_date") // For trials; for paid, use nextBillingDate
+  nextBillingDate DateTime?        @map("next_billing_date") // For recurring
+  status         SubscriptionStatus @default(ACTIVE)
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan          Plan                   @relation(fields: [planId], references: [id])
+  notifications SubscriptionNotification[]
+  payments      Payment[]              @relation("SubscriptionToPayments") // Explicit relation name
+
+  @@index([userId])
+  @@index([planId])
+  @@map("subscriptions")
+}
+
+enum BillingPeriod {
+  MONTHLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+// NEW: SubscriptionNotification model (tracks sent notifications for trials)
+model SubscriptionNotification {
+  id              String       @id @default(uuid())
+  subscriptionId  String       @map("subscription_id")
+  type            String       // e.g., 'reminder', 'final_warning'
+  sentAt          DateTime     @map("sent_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@map("subscription_notifications")
+}
+
+// UPDATED: Payment model (make courseId optional, add subscriptionId for subscription payments)
+model Payment {
+  id                     String    @id @default(uuid())
+  userId                 String    @map("user_id")
+  courseId               String?   @map("course_id") // UPDATED: Optional now
+  subscriptionId         String?   @map("subscription_id") // NEW: For subscription payments
+  amount                 Float
+  currency               String    @default("USD")
+  paymentMethod          String?   @map("payment_method")
+  stripePaymentIntentId  String?   @unique @map("stripe_payment_intent_id")
+  status                 PaymentStatus
+  paidAt                 DateTime? @map("paid_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+
+  user         User         @relation(fields: [userId], references: [id])
+  course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull) // UPDATED: Optional relation with explicit onDelete
+  subscription Subscription? @relation("SubscriptionToPayments", fields: [subscriptionId], references: [id], onDelete: SetNull) // NEW relation with explicit name and onDelete
+
+  @@index([userId])
+  @@index([stripePaymentIntentId])
+  @@index([subscriptionId]) // NEW index
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
 }
