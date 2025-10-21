@@ -8,8 +8,7 @@ export const signupSchema = z.object({
     .regex(/[A-Z]/, 'Password must contain uppercase letter')
     .regex(/[a-z]/, 'Password must contain lowercase letter')
     .regex(/[0-9]/, 'Password must contain number'),
-  firstName: z.string().min(1, 'First name is required').max(100),
-  lastName: z.string().min(1, 'Last name is required').max(100),
+  fullname: z.string().min(1, 'Fullname name is required').max(100),
 });
 
 export const signinSchema = z.object({

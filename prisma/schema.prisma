@@ -17,6 +17,14 @@ model User {
   profileImageUrl   String?   @map("profile_image_url")
   isEmailVerified   Boolean   @default(false) @map("is_email_verified")
   isActive          Boolean   @default(true) @map("is_active")
+  
+   // Onboarding fields (NEW)
+  onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
+  purpose             String?  // 'learn' or 'find_opportunity'
+  userType            String?  @map("user_type") // 'student', 'learner', 'teacher', 'other_profession'
+  classLevel          String?  @map("class_level") // '6', '7', '8', '9', '10'
+  skill               String?  // 'digital_marketing', 'video_editing'
+  
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 

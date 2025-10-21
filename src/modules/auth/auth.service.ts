@@ -8,8 +8,7 @@ export class AuthService {
   async signup(data: {
     email: string;
     password: string;
-    firstName: string;
-    lastName: string;
+    fullname: string;
   }) {
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -28,8 +27,7 @@ export class AuthService {
       data: {
         email: data.email,
         passwordHash,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        fullname: data.fullname,
         role: 'STUDENT',
       },
     });
@@ -46,8 +44,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        fullname: user.fullname,
         role: user.role,
       },
       accessToken,
@@ -84,8 +81,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        fullname: user.fullname,
         role: user.role,
       },
       accessToken,
@@ -199,8 +195,7 @@ export class AuthService {
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
+        fullname: true,
         role: true,
         profileImageUrl: true,  // If you have this field
         isEmailVerified: true,  // If you have this field
