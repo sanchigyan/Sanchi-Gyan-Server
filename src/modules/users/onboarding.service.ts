@@ -39,12 +39,12 @@ export class OnboardingService {
     }
 
     // Determine role based on userType
-    let role: 'ADMIN' | 'TEACHER' | 'STUDENT' = 'STUDENT';
-    if (data.userType === 'teacher') {
-      role = 'TEACHER';
-    } else if (['student', 'learner'].includes(data.userType)) {
-      role = 'STUDENT';
-    }
+    // let role: 'ADMIN' | 'TEACHER' | 'STUDENT' = 'STUDENT';
+    // if (data.userType === 'teacher') {
+    //   role = 'TEACHER';
+    // } else if (['student', 'learner'].includes(data.userType)) {
+    //   role = 'STUDENT';
+    // }
 
     // Update user
     const user = await prisma.user.update({
@@ -55,7 +55,6 @@ export class OnboardingService {
         classLevel: data.classLevel || null,
         skill: data.skill || null,
         onboardingCompleted: true,
-        role: role,
       },
       select: {
         id: true,

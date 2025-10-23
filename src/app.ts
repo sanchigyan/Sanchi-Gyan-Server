@@ -3,6 +3,7 @@ import cors from 'cors';
 import { errorHandler } from './middleware/error.middleware';
 import authRoutes from './modules/auth/auth.routes'
 import userRoutes from './modules/users/users.routes'
+import subscriptionsRoutes from './modules/subscriptions/subscriptions.routes'
 
 const app: Application = express();
 
@@ -21,6 +22,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/subscriptions', subscriptionsRoutes);
 
 // Error handling (must be last)
 app.use(errorHandler);

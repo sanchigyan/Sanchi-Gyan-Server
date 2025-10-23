@@ -3,6 +3,8 @@ import app from './app';
 import logger from './utils/logger';
 import prisma from './config/database';
 import redisClient from './config/redis';
+import cron from 'node-cron';
+import { SubscriptionsService } from './modules/subscriptions/subscriptions.service';
 
 const PORT = process.env.PORT || 5000;
 
@@ -33,6 +35,14 @@ process.on('SIGINT', async () => {
   await prisma.$disconnect();
   await redisClient.quit();
   process.exit(0);
+});
+
+const service = new SubscriptionsService();
+
+// Daily at midnight
+cron.schedule('0 0 * * *', async () => {
+  await service.handleTrialExpirations();
+  await service.handleTrialNotifications();
 });
 
 startServer();

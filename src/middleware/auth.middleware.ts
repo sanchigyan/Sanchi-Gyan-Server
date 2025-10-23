@@ -8,7 +8,7 @@ declare global {
       user?: {
         userId: string;
         email: string;
-        role: string;
+        role: string | null;
       };
     }
   }
@@ -42,7 +42,7 @@ export const requireRole = (...roles: string[]) => {
       throw new AppError('Authentication required', 401);
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!req.user.role ||!roles.includes(req.user.role)) {
       throw new AppError('Insufficient permissions', 403);
     }
 
