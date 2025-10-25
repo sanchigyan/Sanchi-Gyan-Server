@@ -1,3 +1,4 @@
+import { Role } from '@prisma/client';
 import prisma from '../../config/database';
 import { AppError } from '../../middleware/error.middleware';
 
@@ -5,7 +6,6 @@ interface OnboardingData {
   purpose: string;
   userType: string;
   classLevel?: string;
-  skill?: string;
 }
 
 export class OnboardingService {
@@ -30,21 +30,28 @@ export class OnboardingService {
       }
     }
 
-    // Validate skill if learner
-    if (data.userType === 'learner' && data.skill) {
-      const validSkills = ['digital_marketing', 'video_editing'];
-      if (!validSkills.includes(data.skill)) {
-        throw new AppError('Invalid skill', 400);
-      }
-    }
+     // Determine the role based on userType
+    let role: Role  | null = null;
 
-    // Determine role based on userType
-    // let role: 'ADMIN' | 'TEACHER' | 'STUDENT' = 'STUDENT';
-    // if (data.userType === 'teacher') {
-    //   role = 'TEACHER';
-    // } else if (['student', 'learner'].includes(data.userType)) {
-    //   role = 'STUDENT';
-    // }
+    switch (data.userType) {
+      case 'student':
+        // Don't set role yet - they need to subscribe first
+        role = null;
+        break;
+      case 'learner':
+        // Automatically set role to LEARNER
+        role = Role.LEARNER;
+        break;
+      case 'teacher':
+        role = null;
+        break;
+      case 'other_profession':
+        // Keep as USER or null
+        role = 'USER';
+        break;
+      default:
+        role = null;
+    }
 
     // Update user
     const user = await prisma.user.update({
@@ -53,8 +60,8 @@ export class OnboardingService {
         purpose: data.purpose,
         userType: data.userType,
         classLevel: data.classLevel || null,
-        skill: data.skill || null,
         onboardingCompleted: true,
+        role: role,
       },
       select: {
         id: true,

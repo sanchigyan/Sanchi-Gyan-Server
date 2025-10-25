@@ -1,7 +1,6 @@
 import prisma from '../../config/database';
 import { AppError } from '../../middleware/error.middleware';
 import { stripe } from '../../config/stripe';
-import Stripe from 'stripe';
 
 const PLANS: Record<string, { monthly: number; annual: number }> = {
   basic: { monthly: 799, annual: 7990 },

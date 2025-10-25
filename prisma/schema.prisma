@@ -47,6 +47,7 @@ enum Role {
   TEACHER
   STUDENT
   USER
+  LEARNER
 }
 
 // Password Reset Tokens

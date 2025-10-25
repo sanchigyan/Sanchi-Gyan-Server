@@ -7,13 +7,12 @@ export class OnboardingController {
   async updateOnboarding(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.userId;
-      const { purpose, userType, classLevel, skill } = req.body;
+      const { purpose, userType, classLevel} = req.body;
 
       const user = await onboardingService.updateOnboarding(userId, {
         purpose,
         userType,
         classLevel,
-        skill,
       });
 
       res.json({
