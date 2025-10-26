@@ -5,6 +5,8 @@ import authRoutes from './modules/auth/auth.routes'
 import userRoutes from './modules/users/users.routes'
 import subscriptionsRoutes from './modules/subscriptions/subscriptions.routes'
 import paymentRoutes from './modules/payments/payments.routes';
+import courseRoutes from './modules/courses/courses.routes';
+import enrollmentRoutes from './modules/enrollments/enrollments.routes';
 
 const app: Application = express();
 
@@ -25,6 +27,8 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/subscriptions', subscriptionsRoutes);
 app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/courses', courseRoutes);
+app.use('/api/v1/enrollments', enrollmentRoutes);
 
 // Error handling (must be last)
 app.use(errorHandler);

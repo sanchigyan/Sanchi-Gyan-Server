@@ -47,9 +47,8 @@ export class OnboardingService {
         break;
       case 'other_profession':
         // Keep as USER or null
-        role = 'USER';
-        break;
-      default:
+        role = Role.USER;
+        break;      default:
         role = null;
     }
 
