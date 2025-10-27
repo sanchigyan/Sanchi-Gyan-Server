@@ -7,6 +7,7 @@ import subscriptionsRoutes from './modules/subscriptions/subscriptions.routes'
 import paymentRoutes from './modules/payments/payments.routes';
 import courseRoutes from './modules/courses/courses.routes';
 import enrollmentRoutes from './modules/enrollments/enrollments.routes';
+import adminCoursesRoutes from './modules/admin/admin-courses.routes';
 
 const app: Application = express();
 
@@ -29,6 +30,7 @@ app.use('/api/v1/subscriptions', subscriptionsRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/courses', courseRoutes);
 app.use('/api/v1/enrollments', enrollmentRoutes);
+app.use('/api/v1/admin/courses', adminCoursesRoutes);
 
 // Error handling (must be last)
 app.use(errorHandler);
