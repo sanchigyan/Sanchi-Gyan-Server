@@ -33,6 +33,7 @@ model User {
   enrollments       Enrollment[]
   payments          Payment[]
   reviews           Review[]
+  lessonProgress    LessonProgress[] // NEW
   videoProgress     VideoProgress[]
   passwordResetTokens PasswordResetToken[]
   subscription      Subscription? // NEW relation
@@ -91,6 +92,7 @@ model Course {
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   teacher     User            @relation(fields: [teacherId], references: [id])
+  modules     Module[]        // NEW: Modules relation
   sections    CourseSection[]
   enrollments Enrollment[]
   payments    Payment[]
@@ -101,6 +103,81 @@ model Course {
   @@index([slug])
   @@index([isPublished])
   @@map("courses")
+}
+
+model Module {
+  id          String   @id @default(uuid())
+  courseId    String   @map("course_id")
+  title       String
+  description String?  @db.Text
+  orderIndex  Int      @map("order_index")
+  isPublished Boolean  @default(true) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@index([courseId])
+  @@index([orderIndex])
+  @@map("modules")
+}
+
+// NEW: Lesson model
+model Lesson {
+  id               String      @id @default(uuid())
+  moduleId         String      @map("module_id")
+  title            String
+  description      String?     @db.Text
+  type             LessonType  @default(VIDEO)
+  contentUrl       String?     @map("content_url") // Video URL, PDF URL, etc.
+  thumbnailUrl     String?     @map("thumbnail_url")
+  durationSeconds  Int?        @map("duration_seconds")
+  orderIndex       Int         @map("order_index")
+  isFree           Boolean     @default(false) @map("is_free") // Preview lessons
+  isPublished      Boolean     @default(true) @map("is_published")
+  resources        Json?       // Additional resources (PDFs, links, etc.)
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  module          Module            @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  lessonProgress  LessonProgress[]
+
+  @@index([moduleId])
+  @@index([orderIndex])
+  @@map("lessons")
+}
+
+enum LessonType {
+  VIDEO
+  ARTICLE
+  PDF
+  QUIZ
+  ASSIGNMENT
+}
+
+// NEW: Lesson Progress model
+model LessonProgress {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  lessonId       String   @map("lesson_id")
+  enrollmentId   String   @map("enrollment_id")
+  watchedSeconds Int      @default(0) @map("watched_seconds")
+  isCompleted    Boolean  @default(false) @map("is_completed")
+  completedAt    DateTime? @map("completed_at")
+  lastWatchedAt  DateTime @default(now()) @map("last_watched_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+  @@index([enrollmentId])
+  @@map("lesson_progress")
 }
 
 enum Level {
@@ -176,9 +253,11 @@ model Enrollment {
   completedAt        DateTime? @map("completed_at")
   progressPercentage Float     @default(0) @map("progress_percentage")
   lastAccessedAt     DateTime? @map("last_accessed_at")
+  lastLessonId       String?   @map("last_lesson_id") // NEW: Resume from here
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonProgress LessonProgress[] // NEW
 
   @@unique([userId, courseId])
   @@index([userId])
