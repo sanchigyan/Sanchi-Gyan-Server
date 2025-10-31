@@ -9,34 +9,37 @@ datasource db {
 
 // Users table (UPDATED: role is now optional, no default)
 model User {
-  id                String    @id @default(uuid())
-  email             String    @unique
-  passwordHash      String    @map("password_hash")
-  fullname         String    @map("full_name")
-  role              Role?     // UPDATED: Nullable, no default
-  profileImageUrl   String?   @map("profile_image_url")
-  isEmailVerified   Boolean   @default(false) @map("is_email_verified")
-  isActive          Boolean   @default(true) @map("is_active")
-  
+  id              String  @id @default(uuid())
+  email           String  @unique
+  passwordHash    String  @map("password_hash")
+  fullname        String  @map("full_name")
+  role            Role? // UPDATED: Nullable, no default
+  profileImageUrl String? @map("profile_image_url")
+  isEmailVerified Boolean @default(false) @map("is_email_verified")
+  isActive        Boolean @default(true) @map("is_active")
+
   // Onboarding fields
-  onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
-  purpose             String?  // 'learn' or 'find_opportunity'
-  userType            String?  @map("user_type") // 'student', 'learner', 'teacher', 'other_profession'
-  classLevel          String?  @map("class_level") // '6', '7', '8', '9', '10'
-  skill               String?  // 'digital_marketing', 'video_editing'
-  
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
+  onboardingCompleted Boolean @default(false) @map("onboarding_completed")
+  purpose             String? // 'learn' or 'find_opportunity'
+  userType            String? @map("user_type") // 'student', 'learner', 'teacher', 'other_profession'
+  classLevel          String? @map("class_level") // '6', '7', '8', '9', '10'
+  skill               String? // 'digital_marketing', 'video_editing'
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  courses           Course[]
-  enrollments       Enrollment[]
-  payments          Payment[]
-  reviews           Review[]
-  lessonProgress    LessonProgress[] // NEW
-  videoProgress     VideoProgress[]
-  passwordResetTokens PasswordResetToken[]
-  subscription      Subscription? // NEW relation
+  courses              Course[]
+  enrollments          Enrollment[]
+  payments             Payment[]
+  reviews              Review[]
+  lessonProgress       LessonProgress[] // NEW
+  videoProgress        VideoProgress[]
+  passwordResetTokens  PasswordResetToken[]
+  subscription         Subscription? // NEW relation
+  liveClasses          LiveClass[]           @relation // Classes created by this user
+  liveClassAttendances LiveClassAttendance[]
+  liveClassReminders   LiveClassReminder[]
 
   @@index([email])
   @@index([role])
@@ -69,35 +72,36 @@ model PasswordResetToken {
 
 // Courses
 model Course {
-  id              String    @id @default(uuid())
+  id              String   @id @default(uuid())
   title           String
-  slug            String    @unique
-  description     String?   @db.Text
-  thumbnailUrl    String?   @map("thumbnail_url")
-  teacherId       String    @map("teacher_id")
-  instructorName  String?   @map("instructor_name") // NEW: Display instructor name
+  slug            String   @unique
+  description     String?  @db.Text
+  thumbnailUrl    String?  @map("thumbnail_url")
+  teacherId       String   @map("teacher_id")
+  instructorName  String?  @map("instructor_name") // NEW: Display instructor name
   category        String?
   level           Level?
-  durationHours   Float?    @map("duration_hours")
-  price           Float     @default(0)
-  discountPrice   Float?    @map("discount_price")
-  isPublished     Boolean   @default(false) @map("is_published")
-  enrollmentCount Int       @default(0) @map("enrollment_count")
-  rating          Float     @default(0)
-  language        String    @default("English") // NEW
-  videoPreviewUrl String?   @map("video_preview_url") // NEW
-  skills          String[]  @default([]) // NEW: Array of skills
-  totalLessons    Int       @default(0) @map("total_lessons") // NEW
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  durationHours   Float?   @map("duration_hours")
+  price           Float    @default(0)
+  discountPrice   Float?   @map("discount_price")
+  isPublished     Boolean  @default(false) @map("is_published")
+  enrollmentCount Int      @default(0) @map("enrollment_count")
+  rating          Float    @default(0)
+  language        String   @default("English") // NEW
+  videoPreviewUrl String?  @map("video_preview_url") // NEW
+  skills          String[] @default([]) // NEW: Array of skills
+  totalLessons    Int      @default(0) @map("total_lessons") // NEW
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   teacher     User            @relation(fields: [teacherId], references: [id])
-  modules     Module[]        // NEW: Modules relation
+  modules     Module[] // NEW: Modules relation
   sections    CourseSection[]
   enrollments Enrollment[]
   payments    Payment[]
   reviews     Review[]
   notes       CourseNote[]
+  liveClasses LiveClass[]
 
   @@index([teacherId])
   @@index([slug])
@@ -125,23 +129,23 @@ model Module {
 
 // NEW: Lesson model
 model Lesson {
-  id               String      @id @default(uuid())
-  moduleId         String      @map("module_id")
-  title            String
-  description      String?     @db.Text
-  type             LessonType  @default(VIDEO)
-  contentUrl       String?     @map("content_url") // Video URL, PDF URL, etc.
-  thumbnailUrl     String?     @map("thumbnail_url")
-  durationSeconds  Int?        @map("duration_seconds")
-  orderIndex       Int         @map("order_index")
-  isFree           Boolean     @default(false) @map("is_free") // Preview lessons
-  isPublished      Boolean     @default(true) @map("is_published")
-  resources        Json?       // Additional resources (PDFs, links, etc.)
-  createdAt        DateTime    @default(now()) @map("created_at")
-  updatedAt        DateTime    @updatedAt @map("updated_at")
+  id              String     @id @default(uuid())
+  moduleId        String     @map("module_id")
+  title           String
+  description     String?    @db.Text
+  type            LessonType @default(VIDEO)
+  contentUrl      String?    @map("content_url") // Video URL, PDF URL, etc.
+  thumbnailUrl    String?    @map("thumbnail_url")
+  durationSeconds Int?       @map("duration_seconds")
+  orderIndex      Int        @map("order_index")
+  isFree          Boolean    @default(false) @map("is_free") // Preview lessons
+  isPublished     Boolean    @default(true) @map("is_published")
+  resources       Json? // Additional resources (PDFs, links, etc.)
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
 
-  module          Module            @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  lessonProgress  LessonProgress[]
+  module         Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  lessonProgress LessonProgress[]
 
   @@index([moduleId])
   @@index([orderIndex])
@@ -158,16 +162,16 @@ enum LessonType {
 
 // NEW: Lesson Progress model
 model LessonProgress {
-  id             String   @id @default(uuid())
-  userId         String   @map("user_id")
-  lessonId       String   @map("lesson_id")
-  enrollmentId   String   @map("enrollment_id")
-  watchedSeconds Int      @default(0) @map("watched_seconds")
-  isCompleted    Boolean  @default(false) @map("is_completed")
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  lessonId       String    @map("lesson_id")
+  enrollmentId   String    @map("enrollment_id")
+  watchedSeconds Int       @default(0) @map("watched_seconds")
+  isCompleted    Boolean   @default(false) @map("is_completed")
   completedAt    DateTime? @map("completed_at")
-  lastWatchedAt  DateTime @default(now()) @map("last_watched_at")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  lastWatchedAt  DateTime  @default(now()) @map("last_watched_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
@@ -195,7 +199,7 @@ model CourseSection {
   orderIndex  Int      @map("order_index")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  course Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   videos Video[]
   notes  CourseNote[]
 
@@ -255,8 +259,8 @@ model Enrollment {
   lastAccessedAt     DateTime? @map("last_accessed_at")
   lastLessonId       String?   @map("last_lesson_id") // NEW: Resume from here
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course         Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessonProgress LessonProgress[] // NEW
 
   @@unique([userId, courseId])
@@ -302,17 +306,17 @@ model Review {
 
 // NEW: Plan model (optional; can be hardcoded in code if you don't need admin-editable plans)
 model Plan {
-  id           String       @id @default(uuid())
-  name         String       @unique // e.g., 'Free Trial', 'Basic', 'Premium', 'Pro'
+  id           String   @id @default(uuid())
+  name         String   @unique // e.g., 'Free Trial', 'Basic', 'Premium', 'Pro'
   description  String?
-  monthlyPrice Float        @map("monthly_price")
-  annualPrice  Float        @map("annual_price")
-  features     String[]     // Array of feature strings
-  limitations  String[]     // Array of limitation strings
-  isTrial      Boolean      @default(false)
-  trialDays    Int?         // e.g., 7 for free trial
-  createdAt    DateTime     @default(now()) @map("created_at")
-  updatedAt    DateTime     @updatedAt @map("updated_at")
+  monthlyPrice Float    @map("monthly_price")
+  annualPrice  Float    @map("annual_price")
+  features     String[] // Array of feature strings
+  limitations  String[] // Array of limitation strings
+  isTrial      Boolean  @default(false)
+  trialDays    Int? // e.g., 7 for free trial
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   subscriptions Subscription[]
 
@@ -321,21 +325,21 @@ model Plan {
 
 // NEW: Subscription model
 model Subscription {
-  id             String            @id @default(uuid())
-  userId         String            @unique @map("user_id") // One subscription per user
-  planId         String            @map("plan_id")
-  billingPeriod  BillingPeriod     @map("billing_period")
-  startDate      DateTime          @default(now()) @map("start_date")
-  endDate        DateTime?         @map("end_date") // For trials; for paid, use nextBillingDate
-  nextBillingDate DateTime?        @map("next_billing_date") // For recurring
-  status         SubscriptionStatus @default(ACTIVE)
-  createdAt      DateTime          @default(now()) @map("created_at")
-  updatedAt      DateTime          @updatedAt @map("updated_at")
+  id              String             @id @default(uuid())
+  userId          String             @unique @map("user_id") // One subscription per user
+  planId          String             @map("plan_id")
+  billingPeriod   BillingPeriod      @map("billing_period")
+  startDate       DateTime           @default(now()) @map("start_date")
+  endDate         DateTime?          @map("end_date") // For trials; for paid, use nextBillingDate
+  nextBillingDate DateTime?          @map("next_billing_date") // For recurring
+  status          SubscriptionStatus @default(ACTIVE)
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
 
-  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan          Plan                   @relation(fields: [planId], references: [id])
+  user          User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan          Plan                       @relation(fields: [planId], references: [id])
   notifications SubscriptionNotification[]
-  payments      Payment[]              @relation("SubscriptionToPayments") // Explicit relation name
+  payments      Payment[]                  @relation("SubscriptionToPayments") // Explicit relation name
 
   @@index([userId])
   @@index([planId])
@@ -356,11 +360,11 @@ enum SubscriptionStatus {
 
 // NEW: SubscriptionNotification model (tracks sent notifications for trials)
 model SubscriptionNotification {
-  id              String       @id @default(uuid())
-  subscriptionId  String       @map("subscription_id")
-  type            String       // e.g., 'reminder', 'final_warning'
-  sentAt          DateTime     @map("sent_at")
-  createdAt       DateTime     @default(now()) @map("created_at")
+  id             String   @id @default(uuid())
+  subscriptionId String   @map("subscription_id")
+  type           String // e.g., 'reminder', 'final_warning'
+  sentAt         DateTime @map("sent_at")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
@@ -370,20 +374,20 @@ model SubscriptionNotification {
 
 // UPDATED: Payment model (make courseId optional, add subscriptionId for subscription payments)
 model Payment {
-  id                     String    @id @default(uuid())
-  userId                 String    @map("user_id")
-  courseId               String?   @map("course_id") // UPDATED: Optional now
-  subscriptionId         String?   @map("subscription_id") // NEW: For subscription payments
-  amount                 Float
-  currency               String    @default("USD")
-  paymentMethod          String?   @map("payment_method")
-  stripePaymentIntentId  String?   @unique @map("stripe_payment_intent_id")
-  status                 PaymentStatus
-  paidAt                 DateTime? @map("paid_at")
-  createdAt              DateTime  @default(now()) @map("created_at")
+  id                    String        @id @default(uuid())
+  userId                String        @map("user_id")
+  courseId              String?       @map("course_id") // UPDATED: Optional now
+  subscriptionId        String?       @map("subscription_id") // NEW: For subscription payments
+  amount                Float
+  currency              String        @default("USD")
+  paymentMethod         String?       @map("payment_method")
+  stripePaymentIntentId String?       @unique @map("stripe_payment_intent_id")
+  status                PaymentStatus
+  paidAt                DateTime?     @map("paid_at")
+  createdAt             DateTime      @default(now()) @map("created_at")
 
-  user         User         @relation(fields: [userId], references: [id])
-  course       Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull) // UPDATED: Optional relation with explicit onDelete
+  user         User          @relation(fields: [userId], references: [id])
+  course       Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull) // UPDATED: Optional relation with explicit onDelete
   subscription Subscription? @relation("SubscriptionToPayments", fields: [subscriptionId], references: [id], onDelete: SetNull) // NEW relation with explicit name and onDelete
 
   @@index([userId])
@@ -397,4 +401,96 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+}
+
+// Live Classes
+model LiveClass {
+  id               String          @id @default(uuid())
+  courseId         String          @map("course_id")
+  title            String
+  description      String?         @db.Text
+  scheduledAt      DateTime        @map("scheduled_at")
+  durationMinutes  Int             @map("duration_minutes")
+  meetingLink      String?         @map("meeting_link")
+  meetingPlatform  MeetingPlatform @default(ZOOM) @map("meeting_platform")
+  recordingUrl     String?         @map("recording_url")
+  status           LiveClassStatus @default(SCHEDULED)
+  maxAttendees     Int?            @map("max_attendees")
+  createdById      String          @map("created_by_id")
+  isRecurring      Boolean         @default(false) @map("is_recurring")
+  recurringPattern String?         @map("recurring_pattern") // JSON: {frequency: 'weekly', dayOfWeek: 1}
+  notificationSent Boolean         @default(false) @map("notification_sent")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  course      Course                @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdBy   User                  @relation(fields: [createdById], references: [id])
+  attendances LiveClassAttendance[]
+  reminders   LiveClassReminder[]
+
+  @@index([courseId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@index([createdById])
+  @@map("live_classes")
+}
+
+enum MeetingPlatform {
+  ZOOM
+  GOOGLE_MEET
+  MICROSOFT_TEAMS
+  CUSTOM_WEBRTC
+  JITSI
+}
+
+enum LiveClassStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+// Track attendance for each live class
+model LiveClassAttendance {
+  id           String    @id @default(uuid())
+  liveClassId  String    @map("live_class_id")
+  learnerId    String    @map("learner_id")
+  joinedAt     DateTime  @default(now()) @map("joined_at")
+  leftAt       DateTime? @map("left_at")
+  durationMins Int?      @map("duration_mins") // Calculated duration in minutes
+  isPresent    Boolean   @default(true) @map("is_present")
+  
+  liveClass LiveClass @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+  learner   User      @relation(fields: [learnerId], references: [id], onDelete: Cascade)
+
+  @@unique([liveClassId, learnerId])
+  @@index([liveClassId])
+  @@index([learnerId])
+  @@map("live_class_attendances")
+}
+
+enum AttendanceStatus {
+  REGISTERED
+  JOINED
+  COMPLETED
+  MISSED
+}
+
+// Reminders for upcoming live classes
+model LiveClassReminder {
+  id          String    @id @default(uuid())
+  liveClassId String    @map("live_class_id")
+  learnerId   String    @map("learner_id")
+  reminderAt  DateTime  @map("reminder_at") // When to send the reminder
+  sentAt      DateTime? @map("sent_at")
+  type        String    @default("email") // 'email', 'push', 'sms'
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  liveClass LiveClass @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+  learner   User      @relation(fields: [learnerId], references: [id])
+
+  @@index([liveClassId])
+  @@index([learnerId])
+  @@index([reminderAt])
+  @@map("live_class_reminders")
 }

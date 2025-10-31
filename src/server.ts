@@ -5,6 +5,7 @@ import prisma from './config/database';
 import redisClient from './config/redis';
 import cron from 'node-cron';
 import { SubscriptionsService } from './modules/subscriptions/subscriptions.service';
+import { LiveClassService } from './modules/live-classes/live-classes.service';
 
 const PORT = process.env.PORT || 5000;
 
@@ -38,11 +39,24 @@ process.on('SIGINT', async () => {
 });
 
 const service = new SubscriptionsService();
+const liveClassService = new LiveClassService();
 
 // Daily at midnight
 cron.schedule('0 0 * * *', async () => {
   await service.handleTrialExpirations();
   await service.handleTrialNotifications();
+});
+
+// Live class status update - Every 5 minutes
+cron.schedule('*/5 * * * *', async () => {
+  logger.info('Updating live class statuses...');
+  await liveClassService.updateLiveClassStatuses();
+});
+
+// Live class reminders - Every 15 minutes
+cron.schedule('*/15 * * * *', async () => {
+  logger.info('Sending live class reminders...');
+  await liveClassService.sendReminders();
 });
 
 startServer();

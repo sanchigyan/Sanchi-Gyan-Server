@@ -11,6 +11,7 @@ import adminCoursesRoutes from './modules/admin/admin-courses.routes';
 import adminModulesRoutes from './modules/admin/admin-modules.routes';
 import adminLessonsRoutes from './modules/admin/admin-lessons.routes';
 import learningRoutes from './modules/learner/learning.routes';
+import liveClassRoutes from './modules/live-classes/live-classes.routes';
 
 const app: Application = express();
 
@@ -37,6 +38,7 @@ app.use('/api/v1/admin/courses', adminCoursesRoutes);
 app.use('/api/v1/admin', adminModulesRoutes);
 app.use('/api/v1/admin', adminLessonsRoutes);
 app.use('/api/v1/learning', learningRoutes);
+app.use('/api/v1/live-classes', liveClassRoutes);
 
 // Error handling (must be last)
 app.use(errorHandler);
